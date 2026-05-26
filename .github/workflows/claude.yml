@@ -1,0 +1,55 @@
+name: Claude Code
+
+on:
+  issues:
+    types: [labeled]
+  issue_comment:
+    types: [created]
+  pull_request_review_comment:
+    types: [created]
+  pull_request_review:
+    types: [submitted]
+
+jobs:
+  claude:
+    # 触发条件：
+    # 1. issue 被打上 ai-fix label
+    # 2. 或者评论里 @claude
+    if: |
+      (github.event_name == 'issues' && github.event.label.name == 'ai-fix') ||
+      (github.event_name == 'issue_comment' && contains(github.event.comment.body, '@claude')) ||
+      (github.event_name == 'pull_request_review_comment' && contains(github.event.comment.body, '@claude')) ||
+      (github.event_name == 'pull_request_review' && contains(github.event.review.body, '@claude'))
+
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+      id-token: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Swift
+        uses: swift-actions/setup-swift@v2
+        with:
+          swift-version: "5.10"
+
+      - name: Run Claude Code
+        uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          # 用 Sonnet 性价比最高；想换 Opus 4.7 改成 claude-opus-4-7
+          model: "claude-sonnet-4-5"
+          # 给 Claude 的提示：每次修复必须跑测试验证
+          prompt: |
+            You are fixing bugs in a Swift package called Calculator.
+            Always follow the rules in CLAUDE.md.
+            After making code changes, run `swift test` to verify everything passes.
+            Open a PR that closes the originating issue using "Closes #<issue_number>".
