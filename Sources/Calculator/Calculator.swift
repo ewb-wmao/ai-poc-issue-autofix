@@ -15,6 +15,9 @@ public struct Calculator {
     /// 数组求和
     /// Bug 2: 空数组会崩溃（访问了 numbers[0]）
     public func addAll(_ numbers: [Double]) -> Double {
+        guard !numbers.isEmpty else {
+            return 0
+        }
         var sum = numbers[0]
         for i in 1..<numbers.count {
             sum += numbers[i]
