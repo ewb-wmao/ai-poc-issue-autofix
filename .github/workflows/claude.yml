@@ -45,9 +45,10 @@ jobs:
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
-          model: "claude-sonnet-4-5"
+          model: "claude-sonnet-4-6"
+          show_full_output: true
           claude_args: |
-            --allowed-tools "Bash,Edit,Write,Read,Glob,Grep,WebFetch"
+            --permission-mode bypassPermissions
           prompt: |
             You are fixing bugs in a Swift package called Calculator.
             Always follow the rules in CLAUDE.md.
@@ -59,8 +60,8 @@ jobs:
             4. Fix the code in Calculator.swift
             5. Run `swift test` to verify all tests pass
             6. Create a new branch named `claude/issue-<number>`
-            7. Commit your changes
-            8. Push the branch
-            9. Open a pull request that includes "Closes #<issue_number>" in the description
+            7. Commit your changes with a clear message
+            8. Push the branch to origin
+            9. Open a pull request using `gh pr create` with title summarizing the fix and a description that includes "Closes #<issue_number>"
 
-            Do not stop until the PR is created.
+            Do not stop until the PR is created. If a step fails, fix and retry.
