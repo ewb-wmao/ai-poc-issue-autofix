@@ -1,68 +1,30 @@
-name: Claude Code
+name: Codex
 
 on:
   issues:
     types: [labeled]
+  pull_request:
+    branches: [main]
+    types: [labeled]
   issue_comment:
     types: [created]
-  pull_request_review_comment:
-    types: [created]
-  pull_request_review:
-    types: [submitted]
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
 
 jobs:
-  claude:
-    # 触发条件：
-    # 1. issue 被打上 ai-fix label
-    # 2. 或者评论里 @claude
-    if: |
-      (github.event_name == 'issues' && github.event.label.name == 'ai-fix') ||
-      (github.event_name == 'issue_comment' && contains(github.event.comment.body, '@claude')) ||
-      (github.event_name == 'pull_request_review_comment' && contains(github.event.comment.body, '@claude')) ||
-      (github.event_name == 'pull_request_review' && contains(github.event.review.body, '@claude'))
-
+  codex:
     runs-on: ubuntu-latest
-
-    permissions:
-      contents: write
-      pull-requests: write
-      issues: write
-      id-token: write
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Setup Swift
-        uses: swift-actions/setup-swift@v2
+      - name: Run Codex
+        uses: openai/codex-action@v1
         with:
-          swift-version: "5.10"
-
-      - name: Run Claude Code
-        uses: anthropics/claude-code-action@v1
-        with:
-          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
-          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
-          show_full_output: true
-          claude_args: |
-            --model claude-sonnet-4-6
-            --max-turns 30
-            --permission-mode bypassPermissions
-          prompt: |
-            You are fixing bugs in a Swift package called Calculator.
-            Always follow the rules in CLAUDE.md.
-
-            Your workflow MUST be:
-            1. Read the issue carefully
-            2. Locate the relevant code in Sources/Calculator/Calculator.swift
-            3. Write a failing test in Tests/CalculatorTests/CalculatorTests.swift that reproduces the bug
-            4. Fix the code in Calculator.swift
-            5. Run `swift test` to verify all tests pass
-            6. Create a new branch named `claude/issue-<number>`
-            7. Commit your changes with a clear message
-            8. Push the branch to origin
-            9. Open a pull request using `gh pr create` with title summarizing the fix and a description that includes "Closes #<issue_number>"
-
-            Do not stop until the PR is created. If a step fails, fix and retry.
+          openai_api_key: ${{ secrets.OPENAI_API_KEY }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
