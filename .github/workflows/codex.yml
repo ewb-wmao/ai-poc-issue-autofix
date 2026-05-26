@@ -1,0 +1,88 @@
+name: Codex Issue Fix
+
+on:
+  issues:
+    types: [labeled]
+
+jobs:
+  codex-fix:
+    # 只在打了 ai-fix label 时触发
+    if: github.event.label.name == 'ai-fix'
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Swift
+        uses: swift-actions/setup-swift@v2
+        with:
+          swift-version: "5.10"
+
+      - name: Configure git
+        run: |
+          git config user.name "codex-bot"
+          git config user.email "codex-bot@users.noreply.github.com"
+
+      - name: Create branch
+        run: |
+          BRANCH="codex/issue-${{ github.event.issue.number }}"
+          git checkout -b "$BRANCH"
+          echo "BRANCH=$BRANCH" >> $GITHUB_ENV
+
+      - name: Run Codex
+        uses: openai/codex-action@v1
+        with:
+          openai_api_key: ${{ secrets.OPENAI_API_KEY }}
+          model: "gpt-5-codex"
+          sandbox: "workspace-write"
+          prompt: |
+            You are fixing a bug in a Swift package called Calculator.
+
+            The bug is described in this GitHub issue:
+
+            Title: ${{ github.event.issue.title }}
+
+            Body:
+            ${{ github.event.issue.body }}
+
+            Follow these rules (also in CLAUDE.md):
+            - Locate the relevant code in Sources/Calculator/Calculator.swift
+            - Write a failing test in Tests/CalculatorTests/CalculatorTests.swift that reproduces the bug
+            - Fix the code in Calculator.swift
+            - Run `swift test` to verify ALL tests pass
+            - Keep the diff minimal, do not refactor unrelated code
+            - Do not add dependencies, do not rename public APIs
+
+            When done, your changes will be committed and a PR will be opened automatically.
+
+      - name: Commit and push
+        run: |
+          git add -A
+          if git diff --cached --quiet; then
+            echo "No changes were made by Codex"
+            exit 1
+          fi
+          git commit -m "Fix issue #${{ github.event.issue.number }}"
+          git push origin "$BRANCH"
+
+      - name: Create pull request
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh pr create \
+            --title "Fix: ${{ github.event.issue.title }}" \
+            --body "Closes #${{ github.event.issue.number }}
+
+          Automated fix by Codex based on the issue description.
+
+          Triggered by @${{ github.event.sender.login }}." \
+            --base main \
+            --head "$BRANCH"
