@@ -23,7 +23,9 @@ final class CalculatorTests: XCTestCase {
         XCTAssertEqual(calc.addAll([1.0, 2.0, 3.0]), 6.0)
     }
 
-    // 故意缺失：空数组测试（Bug 2 修复时需要补上）
+    func testAddAllEmptyArrayReturnsZero() {
+        XCTAssertEqual(calc.addAll([]), 0.0)
+    }
 
     // MARK: - addFromString
 
