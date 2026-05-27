@@ -33,6 +33,18 @@ final class CalculatorTests: XCTestCase {
         XCTAssertEqual(calc.addFromString("1,2,3"), 6.0)
     }
 
+    func testAddFromStringSingleNegative() {
+        XCTAssertEqual(calc.addFromString("-5"), -5.0)
+    }
+
+    func testAddFromStringMultipleNegatives() {
+        XCTAssertEqual(calc.addFromString("-1,-2,-3"), -6.0)
+    }
+
+    func testAddFromStringMixedSigns() {
+        XCTAssertEqual(calc.addFromString("1,-2,3"), 2.0)
+    }
+
     // 故意缺失：带空格的输入测试（Bug 3）
     // 故意缺失：负数输入测试（Bug 4）
 
