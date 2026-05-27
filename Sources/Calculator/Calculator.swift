@@ -32,9 +32,8 @@ public struct Calculator {
         let parts = input.split(separator: ",")
         var sum: Double = 0
         for part in parts {
-            // Bug 4: 这里粗暴地把 "-" 当成了无效字符处理
-            let cleaned = part.replacingOccurrences(of: "-", with: "")
-            guard let value = Double(cleaned) else {
+            let trimmed = part.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard let value = Double(trimmed) else {
                 return nil
             }
             sum += value
